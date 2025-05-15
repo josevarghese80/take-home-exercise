@@ -71,7 +71,19 @@ Generate a customer persona containing:
 3. lambda-stack.yaml
 4. lex-stack.yaml
 5. frontend-stack.yaml
-## Hybrid Modularization Breakdown: Functional vs. Lifecycle-Aligned Stacks
+## Hybrid Modularization Breakdown: Functional vs. Lifecycle-Aligned Stacks with SSM-Based Inter-Stack Communication
+The below table support the use of SSM parameters vs import/export for cross stack communication
+| Feature                      | **SSM Parameters**                                       | **CloudFormation Export/Import**                  |
+| ---------------------------- | -------------------------------------------------------- | ------------------------------------------------- |
+| Cross-Stack Referencing      | Flexible (can reference outside of CFN)                  | Works within same region/account                |
+| Loose Coupling               | Very loose — stacks don’t depend on each other’s state   | Tight coupling — dependencies at stack level    |
+| Stack Updates                | Can update without dependency reordering                 | Must update dependent stacks last               |
+| Access Control               | Fine-grained IAM control via `ssm:GetParameter`          | No access control — relies on CFN internal refs |
+| Dev/Test/Prod Flexibility    | Easy to override with different values                   | Must re-export/import or duplicate              |
+| Debugging Simplicity         | Parameters visible in SSM console                        | Harder to trace in CFN UI                       |
+| Referencing from Code        | APIs, SDKs, Lambdas can read SSM directly                | Not usable outside CloudFormation               |
+| Stack Independence           | Deploy/redeploy in any order                             | Strict deployment order (parent → child)        |
+
 ### FUNCTION-BASED STACKS:  These group resources by what they do
 1. iam-stack.yaml - Roles are foundational and reusable
 2. ssm-bedrock-config.yaml - Global system config, centrally defined
