@@ -65,6 +65,8 @@ Generate a customer persona containing:
 4. Provide clear instructions for how to run the app locally.
 5. No need to include any API keys. We will use our own for testing.
 
+---
+
 ## CloudFormation Deployment Order (Hybrid Modularization for stacks )
 1. iam-stack.yaml
 2. ssm-bedrock-config.yaml
@@ -91,4 +93,6 @@ The below table support the use of SSM parameters vs import/export for cross sta
 ### LIFECYCLE-BASED STACKS: These group resources based on how often they’re expected to change
 1. lambda-stack.yaml - Lambdas change frequently (logic, models)
 2. lex-stack.yaml - Lex needs tuning as you improve UX/NLU
+
+---
 
