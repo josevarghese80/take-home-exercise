@@ -144,6 +144,32 @@ Resources:
                   - logs:DescribeResourcePolicies
                   - logs:DescribeLogGroups
                 Resource: "*"
+  LexServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: persona-lex-service-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lex.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LexInvokeLambdaPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: "*"
+
+  LexRoleArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/iam/LexRoleArn
+      Type: String
+      Value: !GetAtt LexServiceRole.Arn
 
   ValidatorLambdaRoleParam:
     Type: AWS::SSM::Parameter
