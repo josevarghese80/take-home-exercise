@@ -3,7 +3,9 @@ amplify-vite-react-template
 node_modules/
 ai-personagenerator/node_modules/
 backend/node_modules/
-
+backend/CloudFormationTemplates/archive
+backend/lambda/archive
+backend/lambda/*.zip
 # Ignore build and cache files
 ai-personagenerator/dist/
 backend/dist/

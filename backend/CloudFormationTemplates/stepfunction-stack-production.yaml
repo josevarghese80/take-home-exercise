@@ -1,0 +1,101 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Production-ready Step Function for persona orchestration with guardrails, retries, and logging
+
+Parameters:
+  GuardrailLambdaArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lambda/GuardrailArn
+
+  LLMLambdaArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lambda/LLMLambdaArn
+
+  StepFunctionExecutionRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/StepFunctionExecutionRoleArn
+
+Resources:
+  PersonaStepFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/vendedlogs/states/PersonaOrchestrationLogGroup
+      RetentionInDays: 14
+
+  PersonaOrchestrationStepFunction:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: PersonaOrchestration
+      RoleArn: !Ref StepFunctionExecutionRoleArn
+      LoggingConfiguration:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt PersonaStepFunctionLogGroup.Arn
+        IncludeExecutionData: true
+        Level: ALL
+      DefinitionString:
+        !Sub |
+          {
+            "Comment": "Production orchestration for persona generation and chat moderation",
+            "StartAt": "GuardrailCheck",
+            "States": {
+              "GuardrailCheck": {
+                "Type": "Task",
+                "Resource": "${GuardrailLambdaArn}",
+                "TimeoutSeconds": 10,
+                "Retry": [
+                  {
+                    "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2
+                  }
+                ],
+                "Catch": [
+                  {
+                    "ErrorEquals": ["States.ALL"],
+                    "ResultPath": "$.error",
+                    "Next": "BlockedResponse"
+                  }
+                ],
+                "Next": "CallClaude"
+              },
+              "BlockedResponse": {
+                "Type": "Fail",
+                "Error": "UnsafeInput",
+                "Cause": "Guardrail blocked the input."
+              },
+              "CallClaude": {
+                "Type": "Task",
+                "Resource": "${LLMLambdaArn}",
+                "TimeoutSeconds": 20,
+                "Retry": [
+                  {
+                    "ErrorEquals": ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 2,
+                    "BackoffRate": 2
+                  }
+                ],
+                "Catch": [
+                  {
+                    "ErrorEquals": ["States.ALL"],
+                    "ResultPath": "$.error",
+                    "Next": "ClaudeFailure"
+                  }
+                ],
+                "End": true
+              },
+              "ClaudeFailure": {
+                "Type": "Fail",
+                "Error": "ClaudeError",
+                "Cause": "Claude failed after retries"
+              }
+            }
+          }
+
+  PersonaStepFunctionArnParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/stepfunction/PersonaOrchestrationArn
+      Type: String
+      Value: !Ref PersonaOrchestrationStepFunction

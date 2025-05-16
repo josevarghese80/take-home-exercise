@@ -1,0 +1,189 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM roles for each Lambda in Persona Chatbot architecture with SSM parameters
+
+Resources:
+
+  ValidatorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PersonaValidatorLambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ValidatorPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - states:StartSyncExecution
+                Resource: "*"
+
+  GuardrailLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PersonaGuardrailLambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: GuardrailPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - bedrock:InvokeGuardrail
+                Resource: "*"
+
+  LLMLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PersonaLLMLambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LLMPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - bedrock:InvokeModel
+                Resource: "*"
+
+  ChatHandlerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PersonaChatHandlerLambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ChatHandlerPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
+                  - bedrock:InvokeModel
+                Resource: "*"
+
+  SessionEndLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PersonaSessionEndLambdaRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SessionEndPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                Resource: "*"
+  
+  StepFunctionExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: PersonaStepFunctionExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StepFunctionLambdaInvokePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: "*"
+
+  ValidatorLambdaRoleParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/iam/ValidatorLambdaRoleArn
+      Type: String
+      Value: !GetAtt ValidatorLambdaRole.Arn
+
+  GuardrailLambdaRoleParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/iam/GuardrailLambdaRoleArn
+      Type: String
+      Value: !GetAtt GuardrailLambdaRole.Arn
+
+  LLMLambdaRoleParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/iam/LLMLambdaRoleArn
+      Type: String
+      Value: !GetAtt LLMLambdaRole.Arn
+
+  ChatHandlerLambdaRoleParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/iam/ChatHandlerLambdaRoleArn
+      Type: String
+      Value: !GetAtt ChatHandlerLambdaRole.Arn
+
+  SessionEndLambdaRoleParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/iam/SessionEndLambdaRoleArn
+      Type: String
+      Value: !GetAtt SessionEndLambdaRole.Arn
+  
+  
+  StepFunctionExecutionRoleParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/iam/StepFunctionExecutionRoleArn
+      Type: String
+      Value: !GetAtt StepFunctionExecutionRole.Arn

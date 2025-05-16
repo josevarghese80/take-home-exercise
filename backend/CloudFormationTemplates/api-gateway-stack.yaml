@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Production-ready API Gateway for hybrid persona chatbot — CORS enabled, deployed to /dev
+
+Parameters:
+  ValidatorLambdaArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lambda/ValidatorArn
+
+  SessionEndLambdaArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lambda/SessionEndArn
+
+Resources:
+  PersonaApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: PersonaApi
+      EndpointConfiguration:
+        Types: [REGIONAL]
+
+  PersonaResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt PersonaApi.RootResourceId
+      PathPart: persona
+      RestApiId: !Ref PersonaApi
+
+  EndResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt PersonaApi.RootResourceId
+      PathPart: end
+      RestApiId: !Ref PersonaApi
+
+  PersonaPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !Ref PersonaResource
+      RestApiId: !Ref PersonaApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ValidatorLambdaArn}/invocations
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+      RequestParameters: {}
+
+  EndPostMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !Ref EndResource
+      RestApiId: !Ref PersonaApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SessionEndLambdaArn}/invocations
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+      RequestParameters: {}
+
+  PersonaOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      ResourceId: !Ref PersonaResource
+      RestApiId: !Ref PersonaApi
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  EndOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: OPTIONS
+      ResourceId: !Ref EndResource
+      RestApiId: !Ref PersonaApi
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ""
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+
+  DevDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - PersonaPostMethod
+      - EndPostMethod
+      - PersonaOptionsMethod
+      - EndOptionsMethod
+    Properties:
+      RestApiId: !Ref PersonaApi
+      StageName: dev
+
+  ValidatorInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ValidatorLambdaArn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PersonaApi}/*/POST/persona
+
+  SessionEndInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref SessionEndLambdaArn
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PersonaApi}/*/POST/end
+
+Outputs:
+  ApiUrl:
+    Description: Base URL for the API Gateway (dev stage)
+    Value: !Sub "https://${PersonaApi}.execute-api.${AWS::Region}.amazonaws.com/dev"

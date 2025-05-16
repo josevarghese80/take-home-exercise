@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: DynamoDB table for storing persona session data and chat history
+
+Resources:
+  PersonaSessionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PersonaSessionTable
+      AttributeDefinitions:
+        - AttributeName: SessionId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: SessionId
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+      SSESpecification:
+        SSEEnabled: true
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: false
+
+  PersonaSessionTableName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/db/PersonaSessionTableName
+      Type: String
+      Value: !Ref PersonaSessionTable

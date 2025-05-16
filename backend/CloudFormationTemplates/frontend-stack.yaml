@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Static web hosting with S3 + API Gateway integration to Lex
+
+Parameters:
+  LexBotAliasId:
+    Type: String
+    Description: Lex Bot Alias ID (manually retrieved from Lex console or outputs)
+
+  LexBotId:
+    Type: String
+    Description: Lex Bot ID (manually retrieved from Lex console or outputs)
+
+Resources:
+  StaticWebsiteBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: persona-generator-webapp
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StaticWebsiteBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource: !Sub "${StaticWebsiteBucket.Arn}/*"
+
+  LexApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: PersonaLexApi
+      Description: Proxy to Lex runtime for web app
+
+  LexProxyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt LexApi.RootResourceId
+      PathPart: lex
+      RestApiId: !Ref LexApi
+
+  PostToLexMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref LexApi
+      ResourceId: !Ref LexProxyResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${Region}:lex:runtime/bots/${BotId}/aliases/${AliasId}/user/user-id/text
+          - Region: !Ref AWS::Region
+            BotId: !Ref LexBotId
+            AliasId: !Ref LexBotAliasId
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: |
+            {
+              "inputText": "$util.escapeJavaScript($input.body)",
+              "userId": "user-id"
+            }
+        IntegrationResponses:
+          - StatusCode: 200
+      MethodResponses:
+        - StatusCode: 200

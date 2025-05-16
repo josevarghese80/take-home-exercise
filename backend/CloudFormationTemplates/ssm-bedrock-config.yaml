@@ -1,0 +1,40 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: SSM parameters for Amazon Bedrock Guardrail and Claude model configuration
+
+Parameters:
+  GuardrailId:
+    Type: String
+    Description: Bedrock Guardrail ID (e.g., gr-abc123xyz)
+    Default: gr-xxxxx
+
+  GuardrailVersion:
+    Type: String
+    Description: Guardrail version (usually "1")
+    Default: "1"
+
+  LLMModelId:
+    Type: String
+    Description: Bedrock Claude Model ID (e.g., amazon.titan-text-premier-v1:0)
+    Default: amazon.titan-text-premier-v1:0
+
+Resources:
+  GuardrailIdParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/bedrock/GuardrailId
+      Type: String
+      Value: !Ref GuardrailId
+
+  GuardrailVersionParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/bedrock/GuardrailVersion
+      Type: String
+      Value: !Ref GuardrailVersion
+
+  LLMModelIdParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/bedrock/LLMModelId
+      Type: String
+      Value: !Ref LLMModelId

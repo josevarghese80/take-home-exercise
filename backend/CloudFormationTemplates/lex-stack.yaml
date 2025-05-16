@@ -1,0 +1,91 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Amazon Lex V2 bot for Persona Generator
+
+Parameters:
+  LexRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/LexRoleArn
+
+  ValidatorLambdaArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lambda/ValidatorArn
+
+Resources:
+  PersonaBot:
+    Type: AWS::Lex::Bot
+    Properties:
+      Name: !Sub '${AWS::StackName}-PersonaGeneratorBot'
+      RoleArn: !Ref LexRoleArn
+      DataPrivacy:
+        ChildDirected: false
+      IdleSessionTTLInSeconds: 300
+      AutoBuildBotLocales: true
+      BotLocales:
+        - LocaleId: en_US
+          Description: English (US)
+          NluConfidenceThreshold: 0.4
+          Intents:
+            - Name: GeneratePersonaIntent
+              SampleUtterances:
+                - Generate a persona for {CompanyName} with characteristics {Characteristics}
+                - Create a persona for {CompanyName}
+                - Build persona using {Characteristics} for {CompanyName}
+                - I want a persona for {CompanyName}
+              Slots:
+                - Name: CompanyName
+                  SlotTypeName: AMAZON.AlphaNumeric
+                  ValueElicitationSetting:
+                    SlotConstraint: Required
+                    PromptSpecification:
+                      MessageGroups:
+                        - Message:
+                            PlainTextMessage:
+                              Value: What is the company name?
+                      MaxRetries: 2
+                      AllowInterrupt: true
+                - Name: Characteristics
+                  SlotTypeName: AMAZON.AlphaNumeric
+                  ValueElicitationSetting:
+                    SlotConstraint: Required
+                    PromptSpecification:
+                      MessageGroups:
+                        - Message:
+                            PlainTextMessage:
+                              Value: What are the characteristics of the company?
+                      MaxRetries: 2
+                      AllowInterrupt: true
+              FulfillmentCodeHook:
+                Enabled: true
+            - Name: FallbackIntent
+              ParentIntentSignature: AMAZON.FallbackIntent
+              IntentClosingSetting:
+                ClosingResponse:
+                  MessageGroups:
+                    - Message:
+                        PlainTextMessage:
+                          Value: Sorry, I can only help with generating personas based on company name and characteristics.
+                  AllowInterrupt: true
+
+  PersonaBotVersion:
+    Type: AWS::Lex::BotVersion
+    Properties:
+      BotId: !Ref PersonaBot
+      BotVersionLocaleSpecification:
+        - LocaleId: en_US
+          BotVersionLocaleDetails:
+            SourceBotVersion: DRAFT
+      Description: v1.0 for Persona Generator Bot
+
+  PersonaBotAlias:
+    Type: AWS::Lex::BotAlias
+    Properties:
+      BotAliasName: PersonaBotAlias
+      BotId: !Ref PersonaBot
+      BotVersion: !GetAtt PersonaBotVersion.BotVersion
+      BotAliasLocaleSettings:
+        en_US:
+          Enabled: true
+          CodeHookSpecification:
+            LambdaCodeHook:
+              LambdaArn: !Ref ValidatorLambdaArn
+              CodeHookInterfaceVersion: '1.0'

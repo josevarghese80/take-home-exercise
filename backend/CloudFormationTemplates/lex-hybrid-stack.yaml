@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lex bot for hybrid persona chatbot, only used for chat (persona generated externally)
+
+Parameters:
+  LexRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/LexRoleArn
+
+  ChatHandlerLambdaArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lambda/ChatHandlerArn
+
+Resources:
+  HybridPersonaChatBot:
+    Type: AWS::Lex::Bot
+    Properties:
+      Name: !Sub "${AWS::StackName}-PersonaChatBot"
+      RoleArn: !Ref LexRoleArn
+      IdleSessionTTLInSeconds: 300
+      DataPrivacy:
+        ChildDirected: false
+      AutoBuildBotLocales: true
+      BotLocales:
+        - LocaleId: en_US
+          NluConfidenceThreshold: 0.4
+          Intents:
+            - Name: ChatWithPersonaIntent
+              SampleUtterances:
+                - {UserInput}
+                - I have a question
+                - Tell me more about something
+              FulfillmentCodeHook:
+                Enabled: true
+              Slots:
+                - Name: UserInput
+                  SlotTypeName: AMAZON.AlphaNumeric
+                  ValueElicitationSetting:
+                    SlotConstraint: Required
+                    PromptSpecification:
+                      MessageGroups:
+                        - Message:
+                            PlainTextMessage:
+                              Value: What would you like to ask?
+                      MaxRetries: 1
+                      AllowInterrupt: true
+              CodeHook:
+                Enabled: true
+                LambdaCodeHook:
+                  CodeHookInterfaceVersion: "1.0"
+                  LambdaArn: !Ref ChatHandlerLambdaArn

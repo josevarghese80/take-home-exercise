@@ -1,0 +1,160 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lambda stack for persona chatbot - Hybrid model with Step Function
+
+Parameters:
+  ValidatorLambdaRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/ValidatorLambdaRoleArn
+
+  GuardrailLambdaRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/GuardrailLambdaRoleArn
+
+  LLMLambdaRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/LLMLambdaRoleArn
+
+  ChatHandlerLambdaRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/ChatHandlerLambdaRoleArn
+
+  SessionEndLambdaRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/SessionEndLambdaRoleArn
+  S3Bucket:
+      Type: String
+      Description: S3 bucket name where Lambda zips are stored
+  S3Prefix:
+    Type: String
+    Description: S3 prefix/folder path where Lambda zips are stored (no trailing slash)
+  TableName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: DynamoDB table to store session and chat history
+    Default: /persona/db/PersonaSessionTableName
+  PersonaOrchestrationArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: DynamoDB table to store session and chat history
+    Default: /persona/db/PersonaOrchestrationArn
+  GuardrailId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/bedrock/GuardrailId  
+  GuardrailVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/bedrock/GuardrailVersion
+  LLMModelId:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/bedrock/LLMModelId
+    
+Resources:
+  ValidatorLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: persona-validator-lambda
+      Handler: ValidatorLambda.handler
+      Role: !Ref ValidatorLambdaRoleArn
+      Runtime: nodejs18.x
+      Timeout: 10
+      Environment:
+        Variables:
+          TABLENAME: !Ref TableName
+          PERSONA_STEPFUNCTION_ARN: !Ref PersonaOrchestrationArn
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Sub "${S3Prefix}/ValidatorLambda.zip"
+
+  GuardrailLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: persona-guardrail-lambda
+      Handler: GuardrailLambda.handler
+      Role: !Ref GuardrailLambdaRoleArn
+      Runtime: nodejs18.x
+      Timeout: 10
+      Environment:
+        Variables:
+          GUARDRAIL_ID: !Ref GuardrailId
+          GUARDRAIL_VERSION: !Ref GuardrailVersion
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Sub "${S3Prefix}/GuardrailLambda.zip"
+
+  LLMLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: persona-llm-lambda
+      Handler: LLMLambda.handler
+      Role: !Ref LLMLambdaRoleArn
+      Runtime: nodejs18.x
+      Timeout: 10
+      Environment:
+        Variables:
+          LLM_MODEL_ID: !Ref LLMModelId
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Sub "${S3Prefix}/LLMLambda.zip"
+
+  ChatHandlerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: persona-chat-handler-lambda
+      Handler: ChatHandlerLambda.handler
+      Role: !Ref ChatHandlerLambdaRoleArn
+      Runtime: nodejs18.x
+      Timeout: 10
+      Environment:
+        Variables:
+          PERSONA_STEPFUNCTION_ARN: !Ref PersonaOrchestrationArn
+          TABLENAME: !Ref TableName
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Sub "${S3Prefix}/ChatHandlerLambda.zip"
+
+  SessionEndLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: persona-session-end-lambda
+      Handler: SessionEndLambda.handler
+      Role: !Ref SessionEndLambdaRoleArn
+      Runtime: nodejs18.x
+      Timeout: 10
+      Environment:
+        Variables:
+          TABLENAME: !Ref TableName
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Sub "${S3Prefix}/SessionEndLambda.zip"
+
+  ValidatorLambdaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/lambda/ValidatorArn
+      Type: String
+      Value: !GetAtt ValidatorLambda.Arn
+
+  GuardrailLambdaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/lambda/GuardrailArn
+      Type: String
+      Value: !GetAtt GuardrailLambda.Arn
+
+  LLMLambdaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/lambda/LLMLambdaArn
+      Type: String
+      Value: !GetAtt LLMLambda.Arn
+
+  ChatHandlerLambdaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/lambda/ChatHandlerArn
+      Type: String
+      Value: !GetAtt ChatHandlerLambda.Arn
+
+  SessionEndLambdaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/lambda/SessionEndArn
+      Type: String
+      Value: !GetAtt SessionEndLambda.Arn
