@@ -3,7 +3,7 @@ const { BedrockRuntimeClient, InvokeModelCommand } = require("@aws-sdk/client-be
 const bedrockRegion = process.env.AWS_REGION;
 const modelId = process.env.LLM_MODEL_ID;
 // const ssm = new SSMClient({ region });
-const bedrock = new BedrockRuntimeClient({ region: bedrockRegion});
+const bedrock = new BedrockRuntimeClient({ region: bedrockRegion });
 
 exports.handler = async (event) => {
   console.log(`recieved event ${JSON.stringify(event, null, 2)}`)
@@ -12,14 +12,21 @@ exports.handler = async (event) => {
   const { companyName, characteristics, personaPrompt, chatHistory, userInput, generatePersona } = body;
   console.log(`body ${JSON.stringify(body, null, 2)}`)
   let prompt = '';
-  let fullPrompt='';
+  let fullPrompt = '';
   if (generatePersona && generatePersona === 'y') {
-    prompt = `You are ${companyName}. a product described as: ${characteristics}. Please generate a persona for this company.`
+    prompt = `You are You are a highly skilled marketing strategist and persona generation expert.Based on the following company information, generate a realistic customer persona that includes the following Name (realistic and context-appropriate), Age,Gender,Location (city and country),Job Title,Interests and Key Challenges. The customer persona should be a good representative of the kind of individual who would most benefit from or be attracted to this company’s offerings. Company Name:${companyName}. Company Characteristics: ${characteristics}. Format the output in this structure: Customer Persona:
+- Name: 
+- Age: 
+- Gender:
+- Location:
+- Job Title:
+- Interests:
+- Challenges:.`
     fullPrompt = prompt;
   } else {
-    personaPrompt;
+    const prompt = personaPrompt;
     fullPrompt = chatHistory
-    ? `${prompt}${chatHistory.map(t => `User: ${t.user} Assistant: ${t.ai}`).join("")} User: ${userInput}\n\nAssistant:` : `${prompt} User: ${userInput} Assistant:`;
+      ? `${prompt}${chatHistory.map(t => `User: ${t.user} Assistant: ${t.ai}`).join("")} User: ${userInput}\n\nAssistant:` : `${prompt} User: ${userInput} Assistant:`;
   }
   console.log(`prompt ${JSON.stringify(prompt, null, 2)}`)
   // const prompt = personaPrompt
@@ -47,12 +54,13 @@ exports.handler = async (event) => {
   }));
 
   const reply = JSON.parse(new TextDecoder().decode(modelRes.body));
-  console.log(`response from LLM ${JSON.stringify({ 
+  console.log(`response from LLM ${JSON.stringify({
+    answer: reply.results?.[0]?.outputText || "(No output)"
+  })}`)
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
       answer: reply.results?.[0]?.outputText || "(No output)"
-    })}`)
-  return { 
-    statusCode: 200, 
-    body: JSON.stringify({ 
-      answer: reply.results?.[0]?.outputText || "(No output)"
-    }) };
+    })
+  };
 };

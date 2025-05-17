@@ -24,6 +24,8 @@ Resources:
                   - ssm:GetParameter
                   - states:StartSyncExecution
                   - dynamodb:PutItem
+                  - dynamodb:GetItem
+                  - dynamodb:UpdateItem
                 Resource: "*"
               - Effect: Allow
                 Action:
