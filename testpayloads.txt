@@ -1,0 +1,27 @@
+//API Gateway
+
+{
+  "sessionId": "abc123-789",
+  "inputText": "Hello, I need help optimizing my supply chain.",
+  "companyName": "Apex Logistics",
+  "characteristics": "Global freight management company with a focus on sustainability and real-time tracking"
+}
+
+//Validator Lambda input
+{
+  "sessionId": "sess-003",
+  "companyName": "NeuraLens AI",
+  "characteristics": "cutting-edge, neuroscience-inspired, privacy-first, adaptive learning, ethical AI"
+}
+
+{
+  "sessionId": "sess-003",
+  "companyName": "NeuraLens AI",
+  "characteristics": "cutting-edge, neuroscience-inspired, privacy-first, adaptive learning, ethical AI"
+}
+{
+  "sessionId": "sess-005",
+  "companyName": "VoltEdge Mobility",
+  "characteristics": "urban, electric-first, sleek design, carbon-neutral, app-connected, safety-enhanced"
+}
+

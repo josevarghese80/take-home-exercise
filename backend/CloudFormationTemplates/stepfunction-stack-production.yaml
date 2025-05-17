@@ -24,8 +24,9 @@ Resources:
   PersonaOrchestrationStepFunction:
     Type: AWS::StepFunctions::StateMachine
     Properties:
-      StateMachineName: PersonaOrchestration
+      # StateMachineName: PersonaOrchestration1
       RoleArn: !Ref StepFunctionExecutionRoleArn
+      StateMachineType: EXPRESS #For synchronous call
       LoggingConfiguration:
         Destinations:
           - CloudWatchLogsLogGroup:

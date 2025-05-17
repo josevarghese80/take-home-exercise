@@ -1,12 +1,12 @@
-import { DynamoDBClient, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { marshall } from "@aws-sdk/util-dynamodb";
+const { DynamoDBClient, UpdateItemCommand } = require( "@aws-sdk/client-dynamodb");
+const { marshall } = require( "@aws-sdk/util-dynamodb");
 
 const region = process.env.AWS_REGION;
 const tableName = process.env.TABLENAME;
 const dynamo = new DynamoDBClient({ region });
 // const tableName = "PersonaSessionTable";
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   const sessionId = event?.sessionId || (event?.body ? JSON.parse(event.body).sessionId : null);
   if (!sessionId) return { statusCode: 400, body: JSON.stringify({ message: "Missing sessionId" }) };
 

@@ -34,7 +34,7 @@ Parameters:
   PersonaOrchestrationArn:
     Type: AWS::SSM::Parameter::Value<String>
     Description: DynamoDB table to store session and chat history
-    Default: /persona/db/PersonaOrchestrationArn
+    Default: /persona/stepfunction/PersonaOrchestrationArn
   GuardrailId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /persona/bedrock/GuardrailId  

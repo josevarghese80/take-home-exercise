@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: IAM roles for each Lambda in Persona Chatbot architecture with SSM parameters
+Description: IAM roles for Persona Chatbot Lambdas with CloudWatch logging and SSM parameters
 
 Resources:
 
@@ -23,6 +23,13 @@ Resources:
                 Action:
                   - ssm:GetParameter
                   - states:StartSyncExecution
+                  - dynamodb:PutItem
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
                 Resource: "*"
 
   GuardrailLambdaRole:
@@ -44,7 +51,13 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:GetParameter
-                  - bedrock:InvokeGuardrail
+                  - bedrock:ApplyGuardrail
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
                 Resource: "*"
 
   LLMLambdaRole:
@@ -67,6 +80,12 @@ Resources:
                 Action:
                   - ssm:GetParameter
                   - bedrock:InvokeModel
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
                 Resource: "*"
 
   ChatHandlerLambdaRole:
@@ -91,6 +110,12 @@ Resources:
                   - dynamodb:UpdateItem
                   - bedrock:InvokeModel
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
 
   SessionEndLambdaRole:
     Type: AWS::IAM::Role
@@ -112,7 +137,13 @@ Resources:
                 Action:
                   - dynamodb:UpdateItem
                 Resource: "*"
-  
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: "*"
+
   StepFunctionExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -144,6 +175,7 @@ Resources:
                   - logs:DescribeResourcePolicies
                   - logs:DescribeLogGroups
                 Resource: "*"
+
   LexServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -163,6 +195,8 @@ Resources:
               - Effect: Allow
                 Action: lambda:InvokeFunction
                 Resource: "*"
+
+# SSM Outputs for cross-stack reference
 
   LexRoleArnParam:
     Type: AWS::SSM::Parameter
@@ -205,8 +239,7 @@ Resources:
       Name: /persona/iam/SessionEndLambdaRoleArn
       Type: String
       Value: !GetAtt SessionEndLambdaRole.Arn
-  
-  
+
   StepFunctionExecutionRoleParam:
     Type: AWS::SSM::Parameter
     Properties:

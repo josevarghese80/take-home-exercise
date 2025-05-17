@@ -1,7 +1,6 @@
-import { SFNClient, StartSyncExecutionCommand } from "@aws-sdk/client-sfn";
-import { DynamoDBClient, GetItemCommand, UpdateItemCommand } from "@aws-sdk/client-dynamodb";
-import { SSMClient, GetParameterCommand } from "@aws-sdk/client-ssm";
-import { unmarshall, marshall } from "@aws-sdk/util-dynamodb";
+const { SFNClient, StartSyncExecutionCommand } = require( "@aws-sdk/client-sfn");
+const { DynamoDBClient, GetItemCommand, UpdateItemCommand } = require( "@aws-sdk/client-dynamodb");
+const { unmarshall, marshall } = require( "@aws-sdk/util-dynamodb");
 
 const region = process.env.AWS_REGION;
 const stepFnArn = process.env.PERSONA_STEPFUNCTION_ARN;
@@ -11,7 +10,7 @@ const tableName = process.env.TABLENAME;
 const sfn = new SFNClient({ region });
 const dynamo = new DynamoDBClient({ region });
 
-export const handler = async (event) => {
+exports.handler  = async (event) => {
   const userInput = event?.inputTranscript || event?.UserInput || event?.body?.UserInput || "";
   const sessionId = event?.sessionState?.sessionAttributes?.sessionId || event?.sessionId || "default-session";
 
@@ -58,7 +57,7 @@ export const handler = async (event) => {
   }));
 
   return {
-    sessionState: {
+    sessionState: { 
       dialogAction: { type: "Close" },
       intent: { name: "ChatWithPersonaIntent", state: "Fulfilled" }
     },
