@@ -227,9 +227,10 @@ To test without connecting to AWS:
 
 **Configure Amazon Lex post deployment. Lex doesnot yet have full cloudformation support**
 
-## Hybrid Modularization Breakdown: Functional vs. Lifecycle-Aligned Stacks with SSM-Based Inter-Stack Communication
+**All Lambdas have been coded in NodeJs 18 with AWS SKD V3
 
-The below table support the use of SSM parameters vs import/export for cross stack communication
+**The below table support the use of SSM parameters vs import/export for cross stack communication**
+
 | Feature                      | **SSM Parameters**                                       | **CloudFormation Export/Import**                  |
 | ---------------------------- | -------------------------------------------------------- | ------------------------------------------------- |
 | Cross-Stack Referencing      | Flexible (can reference outside of CFN)                  | Works within same region/account                |
@@ -241,13 +242,6 @@ The below table support the use of SSM parameters vs import/export for cross sta
 | Referencing from Code        | APIs, SDKs, Lambdas can read SSM directly                | Not usable outside CloudFormation               |
 | Stack Independence           | Deploy/redeploy in any order                             | Strict deployment order (parent → child)        |
 
-### FUNCTION-BASED STACKS:  These group resources by what they do
-1. iam-stack.yaml - Roles are foundational and reusable
-2. ssm-bedrock-config.yaml - Global system config, centrally defined
-3. frontend-stack.yaml - Dedicated to frontend delivery
-### LIFECYCLE-BASED STACKS: These group resources based on how often they’re expected to change
-1. lambda-stack.yaml - Lambdas change frequently (logic, models)
-2. lex-stack.yaml - Lex needs tuning as you improve UX/NLU
 
 ---
 
@@ -262,7 +256,7 @@ But you **should use Lex** when you want:
 
 ### Lex Advantages
 
-* Lex handles:
+#### 1. **Dont Re invent the wheel:**
 
   * **Intent classification** (e.g., “Generate a persona” vs. “Cancel”)
   * **Slot filling** (e.g., `CompanyName`, `Characteristics`)
@@ -271,7 +265,7 @@ But you **should use Lex** when you want:
 This saves you from writing custom code to parse and manage user input structure.
 
 
-### 2. **Voice and Multimodal Interfaces**
+#### 2. **Voice and Multimodal Interfaces**
 
 * Lex is fully integrated with:
 
@@ -281,7 +275,7 @@ This saves you from writing custom code to parse and manage user input structure
 
 If you want your bot available on voice or omnichannel platforms, Lex is plug-and-play.
 
-### 3. **Guardrails, Fallbacks, Re-prompts, and Error Handling**
+#### 3. **Guardrails, Fallbacks, Re-prompts, and Error Handling**
 
 * Lex provides built-in:
 
@@ -291,7 +285,7 @@ If you want your bot available on voice or omnichannel platforms, Lex is plug-an
 
 You can embed these as safety layers before even reaching Bedrock.
 
-### 4. **Focus Bedrock on the Creativity/Reasoning Layer**
+#### 4. **Focus Bedrock on the Creativity/Reasoning Layer**
 
 * Let Lex handle structure and user flow.
 * Let **Bedrock (Claude)** handle the open-ended language generation:
@@ -302,7 +296,7 @@ You can embed these as safety layers before even reaching Bedrock.
 
 Each system does what it does best.
 
-### 5. **Analytics, Versioning, and Tuning**
+#### 5. **Analytics, Versioning, and Tuning**
 
 * Lex provides:
 
@@ -314,14 +308,225 @@ You get enterprise-grade chatbot management without building it from scratch
 
 ---
 
+## Lambda Descriptions
 
-###Additional Notes###
 
-All Lambdas follow ***Single Responsibility Principle***
+
+
+### **ChatHandlerLambda.js**
+
+#### What This Lambda Function Does
+
+This AWS Lambda function acts as a middle layer between your frontend application and an Amazon Lex V2 chatbot.
+
+#### How It Works
+
+* It receives HTTP POST requests containing two things:
+
+  * A `sessionId` to keep track of the conversation.
+  * A `text` string, which is what the user types into the chat.
+* It then sends this text to Amazon Lex using the `RecognizeTextCommand`.
+* Lex processes the input and returns a response message.
+* The Lambda extracts that message and sends it back to the frontend as a JSON response.
+
+#### CORS Support
+
+The function includes CORS headers, allowing it to be called from web applications hosted on different domains.
+
+#### On Success
+
+* Returns HTTP 200 with the chatbot's reply.
+
+#### On Error
+
+* Logs the error and returns HTTP 500 with a generic message: `"Internal server error."`
+
+#### Configuration
+
+Make sure the following environment variables are set:
+
+* `LEXBOT_ID` – The ID of your Amazon Lex V2 bot.
+* `LEXBOT_ALIAS_ID` – The alias ID of your Lex bot.
+* `AWS_REGION` – The AWS region (defaults to `us-east-1` if not provided explicitly in code).
+
+
+### **LLMLambda.js**
+
+#### What This Lambda Function Does
+
+This AWS Lambda function interacts with Amazon Bedrock to generate intelligent responses using a large language model (LLM). It supports two use cases:
+
+1. **Customer Persona Generation**
+2. **Conversational AI using a custom prompt and chat history**
+
+
+#### How It Works
+
+* The function receives a JSON payload with fields like:
+
+  * `companyName`
+  * `characteristics`
+  * `personaPrompt`
+  * `chatHistory`
+  * `userInput`
+  * `generatePersona` (flag to decide the use case)
+
+#### Mode 1: Generate Customer Persona
+
+If `generatePersona` is `'y'`, the function:
+
+* Constructs a system prompt that instructs the model to generate a customer persona.
+* Sends company info (`companyName` and `characteristics`) as context.
+* Asks the LLM to return details like name, age, gender, job title, location, interests, and challenges.
+
+#### Mode 2: Continue a Conversation
+
+If `generatePersona` is not `'y'`, the function:
+
+* Uses the `personaPrompt` as the base.
+* Appends past messages from `chatHistory` to maintain conversation context.
+* Adds the new `userInput` to continue the dialogue.
+
+
+#### Technical Details
+
+* Uses **Amazon Bedrock Runtime SDK** (`@aws-sdk/client-bedrock-runtime`) to interact with the LLM.
+* The LLM's configuration:
+
+  * `maxTokenCount`: 300
+  * `temperature`: 0.7
+  * `topP`: 1
+* The LLM model ID is read from the `LLM_MODEL_ID` environment variable.
+* Region is taken from the `AWS_REGION` environment variable.
+
+
+
+#### On Success
+
+Returns `200 OK` with the model's text response in the `answer` field.
+
+#### On Error
+
+Currently minimal error handling—returns whatever the model outputs or `"(No output)"` if empty.
+
+
+### **GuardrailLambda.js**
+
+
+#### What This Lambda Function Does
+
+This AWS Lambda function uses **Amazon Bedrock Guardrails** to check user input for potentially harmful, unsafe, or restricted content **before** sending it to an LLM or storing it.
+
+
+#### How It Works
+
+* The function receives an input payload containing:
+
+  * `companyName`
+  * `characteristics`
+  * `userInput`
+* It constructs a `checkText` string from the `userInput`. If that’s not provided, it combines `companyName` and `characteristics`.
+* The function sends this text to **Bedrock's Guardrail service** using the `ApplyGuardrailCommand`.
+
+
+#### On Success
+
+* If the input **passes** the guardrail check, it returns HTTP `200 OK` with the original request body.
+
+#### On Violation
+
+* If the input is **flagged or blocked** by the guardrail (e.g., for toxicity, bias, or policy violations), the function throws an error:
+  `"Input blocked by guardrail"`
+
+
+#### Configuration
+
+Set the following environment variables:
+
+* `AWS_REGION` – The region where Bedrock is deployed.
+* `GUARDRAIL_ID` – The ID of your configured guardrail.
+* `GUARDRAIL_VERSION` – The version of the guardrail to use.
+
+#### Use Case
+
+Use this Lambda in pipelines where you want to **pre-screen user input or generated content** before processing it further—especially in AI-powered applications where safety and compliance are critical.
+
+
+### **ValidatorLambda.js**
+
+#### What This Lambda Function Does
+
+This AWS Lambda function powers a chatbot experience using **Amazon Lex V2**, **AWS Step Functions**, and **DynamoDB**. It handles **persona generation**, **chat history tracking**, and **context-aware conversation management** using a large language model via Step Functions.
+
+
+#### Main Use Cases
+
+1. **Generate a Customer Persona** (via `GetPersonaIntent`)
+2. **Continue a Chat with an Existing Persona** (via `FallbackIntent`)
+
+
+#### How It Works
+
+##### Intent: `GetPersonaIntent`
+
+* Extracts `companyName` and `characteristics` from Lex V2 slots.
+* Triggers a **Step Function** that uses a large language model to generate a **customer persona**.
+* Stores the generated persona and initializes an empty chat history in **DynamoDB**.
+
+#### Intent: `FallbackIntent`
+
+* Retrieves existing session data from DynamoDB using `sessionId`.
+* Reconstructs the chat prompt using:
+
+  * Previously stored **persona prompt**
+  * **Chat history**
+  * The latest **user input**
+* Calls the Step Function to get the AI-generated response.
+* Updates chat history in DynamoDB with the latest turn.
+
+#### Other Intents
+
+* If an unsupported intent is received, returns a fallback message with intent status set to `"Failed"`.
+
+
+### AWS Services Used
+
+* **Amazon Lex V2** – Captures user input and intent.
+* **AWS Step Functions (Sync)** – Orchestrates calls to an LLM.
+* **Amazon DynamoDB** – Stores session data (persona and chat history).
+* **Amazon Bedrock** – Invoked indirectly via Step Function to generate responses.
+
+
+#### Environment Variables
+
+| Variable                              | Purpose                                 |
+| ------------------------------------- | --------------------------------------- |
+| `AWS_REGION`                          | AWS region for all services             |
+| `TABLENAME`                           | DynamoDB table name                     |
+| `PERSONA_STEPFUNCTION_ARN`            | ARN of the Step Function                |
+
+
+
+#### On Success
+
+* Responds with a Lex-compatible response object, containing:
+
+  * Chat message from the LLM
+  * Updated `intentState`
+  * Proper dialog closure for Lex V2
+
+
+
+#### Perfect For
+
+* Chatbots that **simulate sales agents**, **brand ambassadors**, or **customer advisors**
+* Systems needing **session-aware, persona-driven conversations**
+* Applications that combine **AI-generated responses** with **persistent memory**
 
 
 
 ---
+
 
 
 
