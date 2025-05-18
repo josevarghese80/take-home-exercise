@@ -119,15 +119,22 @@ persona-assistant/
 ├── package.json
 └── README.md
 ```
+**Sample Rest API Payload**
 
+ ```json
+  {
+    "sessionId":"sess-1747545307389",
+    "text":"Hello"
+  }
+ ```
 
 ## Setup Instructions
 
 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/persona-assistant.git
-cd persona-assistant
+git clone https://github.com/your-username/take-home-exercise.git
+cd MyPersonaGen
 ````
 
 2. Install dependencies
@@ -162,14 +169,14 @@ npx webpack --mode production
 aws s3 sync dist/ s3://your-bucket-name --acl public-read
 ```
 
-3. Optional: Set up CloudFront for HTTPS and CDN support
+3. Set up CloudFront for HTTPS and CDN support
 
-## AWS Lex Integration (via Lambda)
+## AWS Lex Bedrock Integration (via Lambda)
 
-This app calls Lex using the following pattern:
+This app calls Lex using the following synchronous pattern:
 
 ```
-SPA → API Gateway → Lambda → Lex V2
+SPA → API Gateway → Lambda → Lex V2 -> Lambda (Bedrock Guardrails - Toxicity Check) -> bedrock AI
 ```
 
 ## Mock Mode
@@ -203,29 +210,7 @@ To test without connecting to AWS:
  - The Guardrail should be invoked by the lambda function before sending prompts to claude
  - if the guardrail has Prompt attacks enabled (Enable to detect and block user inputs attempting to override system instructions.), to avoid misclassifying system prompts as a prompt attack and ensure that the filters are selectively applied to user inputs, use input tagging.<br/>
 
- **Sample Rest API Payload**
-
- ```json
-
-{
-  "input": "Create a persona for ZenCorp...",
-  "inputType": "user"
-}
-
-
- ```
-**Sample NodeJS Payload using InvokeGuardrailCommand from aws sdk**
-
-```
-const command = new InvokeGuardrailCommand({
-      guardrailIdentifier: guardrailId,
-      guardrailVersion: guardrailVersion,
-      input: userInput,
-      inputType: "user" // avoids classifying your system prompt as a prompt attack
-    });
-
-```
-
+ 
 
  - Configure bedrock with the LLM model of your choice. List of supported models can be round at [https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html] .Note the model id for the model of your choice.ClaudeModelId
  - All the lambdas use NodeJs 18 with AWS SDK v3
@@ -235,9 +220,12 @@ const command = new InvokeGuardrailCommand({
 
 1. iam-stack.yaml
 2. ssm-bedrock-config.yaml
+3. persona-dynamodb-stack.yaml
 3. lambda-stack.yaml
-4. lex-stack.yaml
-5. frontend-stack.yaml
+4. stepfunction-stack.yaml
+6. api-gateway-stack.yaml
+
+**Configure Amazon Lex post deployment. Lex doesnot yet have full cloudformation support**
 
 ## Hybrid Modularization Breakdown: Functional vs. Lifecycle-Aligned Stacks with SSM-Based Inter-Stack Communication
 
