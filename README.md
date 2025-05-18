@@ -216,9 +216,9 @@ The back end is fully configured in an AWS environment. And uses Bedrock LLM. Sp
  - All the lambdas use NodeJs 18 with AWS SDK v3
 
   **Manual SSM Params for lex - Do this before stack deployment**
-   Go to AWS Services -> System Manager -> Parameter Store and create two parameters
-    * /persona/lex/LexBotAlias - Add a dummy Alias ID
-    * /persona/lex/LexBotID - Add a dummy Bot ID
+ - Go to AWS Services -> System Manager -> Parameter Store and create two parameters
+    - /persona/lex/LexBotAlias - Add a dummy Alias ID
+    - /persona/lex/LexBotID - Add a dummy Bot ID
 
 
 
@@ -232,8 +232,26 @@ The back end is fully configured in an AWS environment. And uses Bedrock LLM. Sp
 4. stepfunction-stack.yaml
 6. api-gateway-stack.yaml
 
+
+
+**The below table support the use of SSM parameters vs import/export for cross stack communication**
+
+| Feature                      | **SSM Parameters**                                       | **CloudFormation Export/Import**                  |
+| ---------------------------- | -------------------------------------------------------- | ------------------------------------------------- |
+| Cross-Stack Referencing      | Flexible (can reference outside of CFN)                  | Works within same region/account                |
+| Loose Coupling               | Very loose — stacks don’t depend on each other’s state   | Tight coupling — dependencies at stack level    |
+| Stack Updates                | Can update without dependency reordering                 | Must update dependent stacks last               |
+| Access Control               | Fine-grained IAM control via `ssm:GetParameter`          | No access control — relies on CFN internal refs |
+| Dev/Test/Prod Flexibility    | Easy to override with different values                   | Must re-export/import or duplicate              |
+| Debugging Simplicity         | Parameters visible in SSM console                        | Harder to trace in CFN UI                       |
+| Referencing from Code        | APIs, SDKs, Lambdas can read SSM directly                | Not usable outside CloudFormation               |
+| Stack Independence           | Deploy/redeploy in any order                             | Strict deployment order (parent → child)        |
+
+
+
+
 ## Post Cloudformation deployment action (If the webapp was deployed first)
-This will be moved to a CICD process in the future. ALso The API gateway URL will be read from a property file.
+This will be moved to a CICD process in the future. Further, the API gateway URL will be read from a property file.
 
 1. Access the REST API created by the api-gateway stack
 2. go to Stages -> expand on the plus sign next to dev all the way down to persona/post
@@ -242,8 +260,11 @@ This will be moved to a CICD process in the future. ALso The API gateway URL wil
 5. go to src -> components -> ChatComponent.jsx
 6. Scroll down to line 32, replace the fetch URL with the copied Invoke URL
 
+---
 
 ## Amazon Lex Configuration
+
+**Configure Amazon Lex post deployment of backend cloudformation stacks. Lex doesnot yet have full cloudformation support**
 
 1. Create a lex bot
 2. Create intent GetPersonaIntent
@@ -263,28 +284,14 @@ This will be moved to a CICD process in the future. ALso The API gateway URL wil
 15. Go to AWS Services -> System Manager -> Parameter Store and modify two parameters
     * /persona/lex/LexBotAlias - Save the TestBotAlias is here
     * /persona/lex/LexBotID - Save the Bot Id here
-**Configure Amazon Lex post deployment. Lex doesnot yet have full cloudformation support**
-
-**All Lambdas have been coded in NodeJs 18 with AWS SKD V3
-
-**The below table support the use of SSM parameters vs import/export for cross stack communication**
-
-| Feature                      | **SSM Parameters**                                       | **CloudFormation Export/Import**                  |
-| ---------------------------- | -------------------------------------------------------- | ------------------------------------------------- |
-| Cross-Stack Referencing      | Flexible (can reference outside of CFN)                  | Works within same region/account                |
-| Loose Coupling               | Very loose — stacks don’t depend on each other’s state   | Tight coupling — dependencies at stack level    |
-| Stack Updates                | Can update without dependency reordering                 | Must update dependent stacks last               |
-| Access Control               | Fine-grained IAM control via `ssm:GetParameter`          | No access control — relies on CFN internal refs |
-| Dev/Test/Prod Flexibility    | Easy to override with different values                   | Must re-export/import or duplicate              |
-| Debugging Simplicity         | Parameters visible in SSM console                        | Harder to trace in CFN UI                       |
-| Referencing from Code        | APIs, SDKs, Lambdas can read SSM directly                | Not usable outside CloudFormation               |
-| Stack Independence           | Deploy/redeploy in any order                             | Strict deployment order (parent → child)        |
 
 
 ---
 
+
+
 ## "Why Choose a Lex Chatbot Over Directly Calling Amazon Bedrock for Your AI Applications?"
-But you **should use Lex** when you want:
+You **should use Lex** when you want:
 
 * Voice interaction
 * Guided, multi-step conversation
@@ -326,7 +333,7 @@ You can embed these as safety layers before even reaching Bedrock.
 #### 4. **Focus Bedrock on the Creativity/Reasoning Layer**
 
 * Let Lex handle structure and user flow.
-* Let **Bedrock (Claude)** handle the open-ended language generation:
+* Let **Bedrock (Titan Text G1 - Premier)** handle the open-ended language generation:
 
   * Persona generation
   * Summaries
@@ -348,7 +355,7 @@ You get enterprise-grade chatbot management without building it from scratch
 
 ## Lambda Descriptions
 
-
+**All Lambdas have been coded in NodeJs 18 with AWS SKD V3**
 
 
 ### **ChatHandlerLambda.js**
