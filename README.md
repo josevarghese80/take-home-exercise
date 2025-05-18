@@ -251,14 +251,14 @@ The back end is fully configured in an AWS environment. And uses Bedrock LLM. Sp
 
 
 ## Post Cloudformation deployment action (If the webapp was deployed first)
-This will be moved to a CICD process in the future. Further, the API gateway URL will be read from a property file.
+This will be moved to a CICD process in the future. 
 
 1. Access the REST API created by the api-gateway stack
 2. go to Stages -> expand on the plus sign next to dev all the way down to persona/post
 3. copy the Invoke URL
 4. Access the code for MyPersonaGen web app
-5. go to src -> components -> ChatComponent.jsx
-6. Scroll down to line 32, replace the fetch URL with the copied Invoke URL
+5. go to src -> config.js -> API_URL -> Replace the URL with your new URL
+6. Relaod the app
 
 ---
 

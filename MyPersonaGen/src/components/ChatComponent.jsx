@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
-
+import { API_URL } from "../config"; 
 export default function ChatComponent() {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
@@ -28,8 +28,9 @@ export default function ChatComponent() {
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
         setLoading(true);
+        console.log(`API URL ${API_URL}`)
         try {
-            const response = await fetch("https://37f8k0ix80.execute-api.us-east-1.amazonaws.com/dev/persona", {
+            const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
