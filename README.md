@@ -215,12 +215,6 @@ The back end is fully configured in an AWS environment. And uses Bedrock LLM. Sp
  - Configure bedrock with the LLM model **Titan Text G1 - Premier** with Model ID **amazon.titan-text-premier-v1:0**. List of supported models can be round at [https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html] .Note Lambds code to access the LLM varies by Model selected. This lambda code is designed to work with **amazon.titan-text-premier-v1:0**.
  - All the lambdas use NodeJs 18 with AWS SDK v3
 
-  **Manual SSM Params for lex - Do this before stack deployment**
- - Go to AWS Services -> System Manager -> Parameter Store and create two parameters
-    - /persona/lex/LexBotAlias - Add a dummy Alias ID
-    - /persona/lex/LexBotID - Add a dummy Bot ID
-
-
 
 ## CloudFormation Deployment Order - Follow this order so the cross stack parameters are generated as required
 
@@ -230,6 +224,7 @@ The back end is fully configured in an AWS environment. And uses Bedrock LLM. Sp
 3. persona-dynamodb-stack.yaml
 3. lambda-stack.yaml
 4. stepfunction-stack.yaml
+5. lex-bot-stack.yaml
 6. api-gateway-stack.yaml
 
 
@@ -262,31 +257,6 @@ This will be moved to a CICD process in the future.
 
 ---
 
-## Amazon Lex Configuration
-
-**Configure Amazon Lex post deployment of backend cloudformation stacks. Lex doesnot yet have full cloudformation support**
-
-1. Create a lex bot
-2. Create intent GetPersonaIntent
-2. Copy paste sample utterances from gitrepo/backend/sampleUtterancesGetPersonaIntent.txt
-3. Add slots companyname as type AMAZON.AlphaNumeric and characteristics as type AMAZON.FreeFormInput
-4. Under fulfilment click advanced options, check use a lambda function for fulfilment
-5. Save the GetPersonaIntent
-6. Click on the Fallback intent to open it
-7. Scrolldown to Fulfillment. click advanced options, check use a lambda function for fulfilment
-8. Click on Aliases. CLick on TestBotAlias 
-9. Select English US as language
-10. For Lambda function select validator lambda (show display as personal-validator-lambda) and the $Latest version
-11. Click save.
-12. Go back to intents, and click build
-13. Click on TestBotAlias and note down the ID
-14. Click on the bot name and note down the ID (bot id)
-15. Go to AWS Services -> System Manager -> Parameter Store and modify two parameters
-    * /persona/lex/LexBotAlias - Save the TestBotAlias is here
-    * /persona/lex/LexBotID - Save the Bot Id here
-
-
----
 
 
 
