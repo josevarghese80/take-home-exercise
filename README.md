@@ -191,7 +191,7 @@ To test without connecting to AWS:
 
 # `Back End AWS` 
 
-
+The back end is fully configured in an AWS environment. And uses Bedrock LLM. Specifically it uses **Titan Text G1 - Premier** with Model ID **amazon.titan-text-premier-v1:0**
 ## Pre Cloudformation Deployment steps
 
 **Note - Before starting stack submission**
@@ -207,15 +207,22 @@ To test without connecting to AWS:
     - politics
     - religion
     - self-harm
- - The Guardrail should be invoked by the lambda function before sending prompts to claude
+ - The Guardrail should be invoked by the lambda function before sending prompts to LLM
  - if the guardrail has Prompt attacks enabled (Enable to detect and block user inputs attempting to override system instructions.), to avoid misclassifying system prompts as a prompt attack and ensure that the filters are selectively applied to user inputs, use input tagging.<br/>
 
  
 
- - Configure bedrock with the LLM model of your choice. List of supported models can be round at [https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html] .Note the model id for the model of your choice.ClaudeModelId
+ - Configure bedrock with the LLM model **Titan Text G1 - Premier** with Model ID **amazon.titan-text-premier-v1:0**. List of supported models can be round at [https://docs.aws.amazon.com/bedrock/latest/userguide/models-supported.html] .Note Lambds code to access the LLM varies by Model selected. This lambda code is designed to work with **amazon.titan-text-premier-v1:0**.
  - All the lambdas use NodeJs 18 with AWS SDK v3
 
-## CloudFormation Deployment Order (Hybrid Modularization for stacks )
+  **Manual SSM Params for lex - Do this before stack deployment**
+   Go to AWS Services -> System Manager -> Parameter Store and create two parameters
+    * /persona/lex/LexBotAlias - Add a dummy Alias ID
+    * /persona/lex/LexBotID - Add a dummy Bot ID
+
+
+
+## CloudFormation Deployment Order - Follow this order so the cross stack parameters are generated as required
 
 
 1. iam-stack.yaml
@@ -225,6 +232,37 @@ To test without connecting to AWS:
 4. stepfunction-stack.yaml
 6. api-gateway-stack.yaml
 
+## Post Cloudformation deployment action (If the webapp was deployed first)
+This will be moved to a CICD process in the future. ALso The API gateway URL will be read from a property file.
+
+1. Access the REST API created by the api-gateway stack
+2. go to Stages -> expand on the plus sign next to dev all the way down to persona/post
+3. copy the Invoke URL
+4. Access the code for MyPersonaGen web app
+5. go to src -> components -> ChatComponent.jsx
+6. Scroll down to line 32, replace the fetch URL with the copied Invoke URL
+
+
+## Amazon Lex Configuration
+
+1. Create a lex bot
+2. Create intent GetPersonaIntent
+2. Copy paste sample utterances from gitrepo/backend/sampleUtterancesGetPersonaIntent.txt
+3. Add slots companyname as type AMAZON.AlphaNumeric and characteristics as type AMAZON.FreeFormInput
+4. Under fulfilment click advanced options, check use a lambda function for fulfilment
+5. Save the GetPersonaIntent
+6. Click on the Fallback intent to open it
+7. Scrolldown to Fulfillment. click advanced options, check use a lambda function for fulfilment
+8. Click on Aliases. CLick on TestBotAlias 
+9. Select English US as language
+10. For Lambda function select validator lambda (show display as personal-validator-lambda) and the $Latest version
+11. Click save.
+12. Go back to intents, and click build
+13. Click on TestBotAlias and note down the ID
+14. Click on the bot name and note down the ID (bot id)
+15. Go to AWS Services -> System Manager -> Parameter Store and modify two parameters
+    * /persona/lex/LexBotAlias - Save the TestBotAlias is here
+    * /persona/lex/LexBotID - Save the Bot Id here
 **Configure Amazon Lex post deployment. Lex doesnot yet have full cloudformation support**
 
 **All Lambdas have been coded in NodeJs 18 with AWS SKD V3
