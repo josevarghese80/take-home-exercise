@@ -2,15 +2,60 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Production-ready API Gateway for hybrid persona chatbot — CORS enabled, deployed to /dev
 
 Parameters:
-  ChatHandlerArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/lambda/ChatHandlerArn
-
+  
   SessionEndLambdaArn:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /persona/lambda/SessionEndArn
 
+  PersonaOrchestrationArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: StepFunction ARN
+    Default: /persona/stepfunction/PersonaOrchestrationArn
+  TableName:
+    Type: AWS::SSM::Parameter::Value<String>
+    Description: DynamoDB table to store session and chat history
+    Default: /persona/db/PersonaSessionTableName 
+  LexBotID:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lex/LexBotID
+  ChatHandlerLambdaRoleArn:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/iam/ChatHandlerLambdaRoleArn
+  LexBotAlias:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lex/LexBotAlias
+  S3Bucket:
+      Type: String
+      Description: S3 bucket name where Lambda zips are stored
+  S3Prefix:
+    Type: String
+    Description: S3 prefix/folder path where Lambda zips are stored (no trailing slash)
 Resources:
+  ChatHandlerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: persona-chat-handler-lambda
+      Handler: ChatHandlerLambda.handler
+      Role: !Ref ChatHandlerLambdaRoleArn
+      Runtime: nodejs18.x
+      Timeout: 10
+      Environment:
+        Variables:
+          PERSONA_STEPFUNCTION_ARN: !Ref PersonaOrchestrationArn
+          TABLENAME: !Ref TableName
+          LEXBOT_ID: !Ref LexBotID
+          LEXBOT_ALIAS_ID: !Ref LexBotAlias
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Sub "${S3Prefix}/ChatHandlerLambda.zip"
+  
+  ChatHandlerLambdaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/lambda/ChatHandlerArn
+      Type: String
+      Value: !GetAtt ChatHandlerLambda.Arn
+
   PersonaApi:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -42,7 +87,7 @@ Resources:
       Integration:
         IntegrationHttpMethod: POST
         Type: AWS_PROXY
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ChatHandlerArn}/invocations
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ChatHandlerLambda.Arn}/invocations
       MethodResponses:
         - StatusCode: 200
           ResponseParameters:
@@ -129,10 +174,10 @@ Resources:
       RestApiId: !Ref PersonaApi
       StageName: dev
 
-  ValidatorInvokePermission:
+  ChatHandlerInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref ChatHandlerArn
+      FunctionName: !GetAtt ChatHandlerLambda.Arn
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PersonaApi}/*/POST/persona
