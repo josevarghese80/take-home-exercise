@@ -66,6 +66,125 @@ Generate a customer persona containing:
 5. No need to include any API keys. We will use our own for testing.
 
 ---
+# Architecture Diagram
+
+![Architecture Diagram](assets/overallArchitecture.svg)
+
+# `Front End Web UI` 
+
+## Web URL
+
+https://d1080c9c9lj37d.cloudfront.net/
+
+## Persona Assistant
+
+Persona Assistant is a modern, mobile-friendly, single-page React application that connects to an AWS Lex V2 chatbot. It helps users generate customer personas for their company, brand, or product by chatting with an AI-powered assistant.
+
+### Features
+
+- Chat-based persona generation using AWS Lex V2
+- Centered, elegant UI with brand logo and titles
+- Fully responsive: centered card on desktop, full-screen on mobile
+- Bootstrap 5 styling with custom message bubbles
+- Typing indicator and professional assistant icons
+- Optional mock mode (no backend needed for local testing)
+
+## Tech Stack
+
+| Layer               | Technology                          |
+|---------------------|----------------------------------   |
+| Frontend            | React (no CRA or Vite)              |
+| Styling             | Bootstrap 5                         |
+| Bot Integration     | AWS Lex V2 via API Gateway + Lambda |
+| Hosting (optional)  | AWS S3 + CloudFront                 |
+| Icons               | react-icons (configurable)          |
+
+## Project Structure
+
+
+```
+persona-assistant/
+├── public/                # Static assets
+│   └── logo.png
+├── src/
+|   |-- assets/
+|   |   |-- logo.png
+│   ├── components/
+│   │   ├── ChatComponent.jsx
+│   │   └── MessageBubble.jsx
+│   ├── App.jsx
+│   └── index.js
+├── webpack.config.js
+├── .babelrc
+├── package.json
+└── README.md
+```
+
+
+## Setup Instructions
+
+1. Clone the repository
+
+```bash
+git clone https://github.com/your-username/persona-assistant.git
+cd persona-assistant
+````
+
+2. Install dependencies
+
+```bash
+npm install
+```
+
+3. Run in development mode
+
+```bash
+npx webpack serve
+```
+
+4. Open in browser
+
+```
+http://localhost:3000
+```
+
+## Deployment (S3 + CloudFront)
+
+1. Build for production
+
+```bash
+npx webpack --mode production
+```
+
+2. Sync to S3
+
+```bash
+aws s3 sync dist/ s3://your-bucket-name --acl public-read
+```
+
+3. Optional: Set up CloudFront for HTTPS and CDN support
+
+## AWS Lex Integration (via Lambda)
+
+This app calls Lex using the following pattern:
+
+```
+SPA → API Gateway → Lambda → Lex V2
+```
+
+## Mock Mode
+
+To test without connecting to AWS:
+
+* Enable mock logic in `ChatComponent.jsx` by simulating responses locally.
+* Useful for UI development without backend setup.
+
+---
+
+
+# `Back End AWS` 
+
+
 ## Pre Cloudformation Deployment steps
 
 **Note - Before starting stack submission**
@@ -216,111 +335,7 @@ All Lambdas follow ***Single Responsibility Principle***
 
 ---
 
-## `Web UI` 
 
-
-# Persona Assistant
-
-Persona Assistant is a modern, mobile-friendly, single-page React application that connects to an AWS Lex V2 chatbot. It helps users generate customer personas for their company, brand, or product by chatting with an AI-powered assistant.
-
-## Features
-
-- Chat-based persona generation using AWS Lex V2
-- Centered, elegant UI with brand logo and titles
-- Fully responsive: centered card on desktop, full-screen on mobile
-- Bootstrap 5 styling with custom message bubbles
-- Typing indicator and professional assistant icons
-- Optional mock mode (no backend needed for local testing)
-
-## Tech Stack
-
-| Layer               | Technology                          |
-|---------------------|----------------------------------   |
-| Frontend            | React (no CRA or Vite)              |
-| Styling             | Bootstrap 5                         |
-| Bot Integration     | AWS Lex V2 via API Gateway + Lambda |
-| Hosting (optional)  | AWS S3 + CloudFront                 |
-| Icons               | react-icons (configurable)          |
-
-## Project Structure
-
-
-```
-persona-assistant/
-├── public/                # Static assets
-│   └── logo.png
-├── src/
-|   |-- assets/
-|   |   |-- logo.png
-│   ├── components/
-│   │   ├── ChatComponent.jsx
-│   │   └── MessageBubble.jsx
-│   ├── App.jsx
-│   └── index.js
-├── webpack.config.js
-├── .babelrc
-├── package.json
-└── README.md
-```
-
-
-## Setup Instructions
-
-1. Clone the repository
-
-```bash
-git clone https://github.com/your-username/persona-assistant.git
-cd persona-assistant
-````
-
-2. Install dependencies
-
-```bash
-npm install
-```
-
-3. Run in development mode
-
-```bash
-npx webpack serve
-```
-
-4. Open in browser
-
-```
-http://localhost:3000
-```
-
-## Deployment (S3 + CloudFront)
-
-1. Build for production
-
-```bash
-npx webpack --mode production
-```
-
-2. Sync to S3
-
-```bash
-aws s3 sync dist/ s3://your-bucket-name --acl public-read
-```
-
-3. Optional: Set up CloudFront for HTTPS and CDN support
-
-## AWS Lex Integration (via Lambda)
-
-This app calls Lex using the following pattern:
-
-```
-SPA → API Gateway → Lambda → Lex V2
-```
-
-## Mock Mode
-
-To test without connecting to AWS:
-
-* Enable mock logic in `ChatComponent.jsx` by simulating responses locally.
-* Useful for UI development without backend setup.
 
 
 
