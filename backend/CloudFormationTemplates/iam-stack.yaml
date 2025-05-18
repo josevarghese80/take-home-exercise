@@ -111,6 +111,7 @@ Resources:
                   - dynamodb:GetItem
                   - dynamodb:UpdateItem
                   - bedrock:InvokeModel
+                  - lex:RecognizeText
                 Resource: "*"
               - Effect: Allow
                 Action:

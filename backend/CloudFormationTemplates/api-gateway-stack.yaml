@@ -2,9 +2,9 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Production-ready API Gateway for hybrid persona chatbot — CORS enabled, deployed to /dev
 
 Parameters:
-  ValidatorLambdaArn:
+  ChatHandlerArn:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/lambda/ValidatorArn
+    Default: /persona/lambda/ChatHandlerArn
 
   SessionEndLambdaArn:
     Type: AWS::SSM::Parameter::Value<String>
@@ -42,7 +42,7 @@ Resources:
       Integration:
         IntegrationHttpMethod: POST
         Type: AWS_PROXY
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ValidatorLambdaArn}/invocations
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ChatHandlerArn}/invocations
       MethodResponses:
         - StatusCode: 200
           ResponseParameters:
@@ -132,7 +132,7 @@ Resources:
   ValidatorInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref ValidatorLambdaArn
+      FunctionName: !Ref ChatHandlerArn
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PersonaApi}/*/POST/persona

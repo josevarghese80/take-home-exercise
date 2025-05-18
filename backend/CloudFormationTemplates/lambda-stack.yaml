@@ -44,6 +44,12 @@ Parameters:
   LLMModelId:
     Type: AWS::SSM::Parameter::Value<String>
     Default: /persona/bedrock/LLMModelId
+  LexBotID:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lex/LexBotID
+  LexBotAlias:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /persona/lex/LexBotAlias
     
 Resources:
   ValidatorLambda:
@@ -105,6 +111,8 @@ Resources:
         Variables:
           PERSONA_STEPFUNCTION_ARN: !Ref PersonaOrchestrationArn
           TABLENAME: !Ref TableName
+          LEXBOT_ID: !Ref LexBotID
+          LEXBOT_ALIAS_ID: !Ref LexBotAlias
       Code:
         S3Bucket: !Ref S3Bucket
         S3Key: !Sub "${S3Prefix}/ChatHandlerLambda.zip"

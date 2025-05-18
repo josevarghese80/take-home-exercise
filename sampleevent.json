@@ -1,0 +1,94 @@
+{
+    "inputMode": "Text",
+    "sessionId": "340752793882476",
+    "inputTranscript": "it great, sweet and nice",
+    "interpretations": [
+        {
+            "interpretationSource": "Lex",
+            "nluConfidence": 1,
+            "intent": {
+                "name": "GetPersonaIntent",
+                "slots": {
+                    "characteristics": {
+                        "value": {
+                            "originalValue": "it great, sweet and nice",
+                            "resolvedValues": [],
+                            "interpretedValue": "it great, sweet and nice"
+                        },
+                        "shape": "Scalar"
+                    },
+                    "companyname": {
+                        "value": {
+                            "originalValue": "Test COmpany",
+                            "resolvedValues": [
+                                "testcompany"
+                            ],
+                            "interpretedValue": "testcompany"
+                        },
+                        "shape": "Scalar"
+                    }
+                },
+                "state": "ReadyForFulfillment",
+                "confirmationState": "None"
+            }
+        }
+    ],
+    "bot": {
+        "name": "PersonaChatBot",
+        "version": "DRAFT",
+        "localeId": "en_US",
+        "id": "JUQDO3VUI0",
+        "aliasId": "TSTALIASID",
+        "aliasName": "TestBotAlias"
+    },
+    "responseContentType": "text/plain; charset=utf-8",
+    "messageVersion": "1.0",
+    "sessionState": {
+        "originatingRequestId": "53638f79-6009-47e1-9460-d7227ffc074d",
+        "sessionAttributes": {},
+        "intent": {
+            "name": "GetPersonaIntent",
+            "slots": {
+                "characteristics": {
+                    "value": {
+                        "originalValue": "it great, sweet and nice",
+                        "resolvedValues": [],
+                        "interpretedValue": "it great, sweet and nice"
+                    },
+                    "shape": "Scalar"
+                },
+                "companyname": {
+                    "value": {
+                        "originalValue": "Test COmpany",
+                        "resolvedValues": [
+                            "testcompany"
+                        ],
+                        "interpretedValue": "testcompany"
+                    },
+                    "shape": "Scalar"
+                }
+            },
+            "state": "ReadyForFulfillment",
+            "confirmationState": "None"
+        }
+    },
+    "invocationSource": "FulfillmentCodeHook",
+    "transcriptions": [
+        {
+            "resolvedContext": {
+                "intent": "GetPersonaIntent"
+            },
+            "resolvedSlots": {
+                "characteristics": {
+                    "value": {
+                        "originalValue": "it great, sweet and nice",
+                        "resolvedValues": []
+                    },
+                    "shape": "Scalar"
+                }
+            },
+            "transcriptionConfidence": 1,
+            "transcription": "it great, sweet and nice"
+        }
+    ]
+}

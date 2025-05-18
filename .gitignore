@@ -1,27 +1,27 @@
-# Ignore node_modules in the root directory and backend/ai-personagenerator
+# Ignore node_modules in the root directory and backend/MyPersonaGen
 amplify-vite-react-template
 node_modules/
-ai-personagenerator/node_modules/
+MyPersonaGen/node_modules/
 backend/node_modules/
 backend/CloudFormationTemplates/archive
 backend/lambda/archive
 backend/lambda/*.zip
 # Ignore build and cache files
-ai-personagenerator/dist/
+MyPersonaGen/dist/
 backend/dist/
-ai-personagenerator/.next/
+MyPersonaGen/.next/
 backend/.next/
-ai-personagenerator/.nuxt/
+MyPersonaGen/.nuxt/
 backend/.nuxt/
 
 # Ignore environment files
 *.env
-ai-personagenerator/.env
+MyPersonaGen/.env
 backend/.env
 
 # Ignore logs
 *.log
-ai-personagenerator/*.log
+MyPersonaGen/*.log
 backend/*.log
 
 # Ignore temporary system files
