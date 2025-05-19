@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import MessageBubble from "./MessageBubble";
-import { API_URL } from "../config"; 
+import { API_URL } from "../config";
 export default function ChatComponent() {
+    const [userQuestionCount, setUserQuestionCount] = useState(0);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -24,11 +25,37 @@ export default function ChatComponent() {
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const userMessage = { sender: "user", text: input, timestamp: getTime() };
+        const userMessage = {
+            sender: "user",
+            text: input,
+            timestamp: getTime()
+        };
+
         setMessages((prev) => [...prev, userMessage]);
         setInput("");
         setLoading(true);
-        console.log(`API URL ${API_URL}`)
+
+        const newCount = userQuestionCount + 1;
+        setUserQuestionCount(newCount);
+        // console.log(`API URL ${API_URL}`)
+        if (newCount >= 5) {
+            // Stop after 4 user questions
+            const finalMessage = {
+                sender: "bot",
+                text:
+                    `Looks like you're gearing up for a solid sales strategy.
+Let us help you equip your Sales Reps, boost conversions, and maximize ROI — all while growing your brand's influence.
+Visit https://cadime.ai/ to learn more.`,
+                timestamp: getTime(),
+            };
+
+            setTimeout(() => {
+                setMessages((prev) => [...prev, finalMessage]);
+                setLoading(false);
+            }, 1000);
+
+            return;
+        }
         try {
             const response = await fetch(API_URL, {
                 method: "POST",
@@ -52,7 +79,7 @@ export default function ChatComponent() {
             console.error("Lex error:", err);
             setMessages((prev) => [
                 ...prev,
-                { sender: "bot", text: "⚠️ Error talking to Lex.", timestamp: getTime() },
+                { sender: "bot", text: "⚠️ My apoligies. There was an error. Please click Start Over, so I can help you", timestamp: getTime() },
             ]);
         } finally {
             setLoading(false);
@@ -116,9 +143,16 @@ export default function ChatComponent() {
             <button
                 className="btn btn-outline-danger mt-3 w-100"
                 onClick={() => {
-                    setMessages([]);
+                    setMessages([
+                        {
+                            sender: "bot",
+                            text: "👋 Welcome! I’m here to help you generate a customer persona for your business. You can start by saying something like: 'I want to create a persona' or 'Help me build a persona from my company info.'",
+                            timestamp: getTime(),
+                        },
+                    ]);
+                    setUserQuestionCount(0);
                     setInput("");
-                    sessionId = useRef(`sess-${Date.now()}`);
+                    sessionId.current = `sess-${Date.now()}`;
                 }}
             >
                 🔄 Start Over

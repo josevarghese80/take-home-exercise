@@ -19,8 +19,20 @@ export default function App() {
 
               {/* Title + Subtitle as one vertical block */}
               <div className="text-center">
-                <h2 className="mb-1"><strong>Persona Assistant</strong></h2>
+                <div className="d-inline-flex align-items-baseline gap-2 flex-wrap justify-content-center">
+                  <h2 className="mb-0"><strong>Persona Assistant</strong></h2>
+                  <small className="text-muted">
+                    powered by <a href="https://cadime.ai" target="_blank" rel="noopener noreferrer">cadime.ai</a>
+                  </small>
+                </div>
+                {/* <h2 className="mb-1"><strong>Persona Assistant</strong></h2>
+                <small className="text-muted">
+                  powered by <a href="https://cadime.ai" target="_blank" rel="noopener noreferrer">cadime.ai</a>
+                </small> */}
                 <p className="text-muted small mb-0">Know your audience. Grow your business.</p>
+                {/* <p className="text-muted small mb-0">
+                  Visit <a href="https://cadime.ai" target="_blank" rel="noopener noreferrer">https://cadime.ai</a>
+                </p> */}
               </div>
             </div>
 

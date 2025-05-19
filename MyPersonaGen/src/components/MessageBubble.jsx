@@ -5,6 +5,26 @@ import { HiOutlineUserCircle } from 'react-icons/hi';
 export default function MessageBubble({ text, sender, timestamp }) {
   const isUser = sender === "user";
 
+  const formatMessageText = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    return text.split(urlRegex).map((part, i) =>
+      urlRegex.test(part) ? (
+        <a
+          key={i}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={isUser ? "text-white text-decoration-underline" : "text-primary text-decoration-underline"}
+        >
+          {part}
+        </a>
+      ) : (
+        <span key={i}>{part}</span>
+      )
+    );
+  };
+
   return (
     <div className={`d-flex mb-3 ${isUser ? "justify-content-end" : "justify-content-start"}`}>
       {!isUser && <HiOutlineUserCircle size={24} className="me-2 text-secondary" />}
@@ -17,7 +37,7 @@ export default function MessageBubble({ text, sender, timestamp }) {
             animation: "fadeIn 0.3s ease-in-out",
           }}
         >
-          {text}
+          {formatMessageText(text)}
         </div>
         <div className={`small text-muted mt-1 ${isUser ? "text-end" : "text-start"}`}>
           {timestamp}
