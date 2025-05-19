@@ -66,13 +66,49 @@ Generate a customer persona containing:
 5. No need to include any API keys. We will use our own for testing.
 
 ---
+## Project Run Instructions
+
+The complete environment (Front and backend) has been built as an end to end CICD Pipeline
+
+You have two options to run the application
+
+---
+
+### To run the the app locally follow the below steps
+
+1. Clone the repository https://github.com/josevarghese80/take-home-exercise.git
+2. cd MyPersonaGen
+3. run npm install
+4. run npm start
+5. Access the application on http://localhost:3000
+
+### If you want to run this application from your own AWS account 
+
+1. Clone the repository https://github.com/josevarghese80/take-home-exercise.git
+2. Update the below properties in deployment.properties
+  * Create a SPA bucket for the React App - update property REACT_S3_BUCKET
+  * Create a rugular bucket to hold the zipped lambdas - update the LAMBDA_S3_BUCKET
+  * Create a folder in the rugular bucket - update the folder name against LAMBDA_FOLDER
+  * Create a bedrock guardrail - update GUARDRAIL_ID  
+3. Add AWS Credentials as GitHub Secrets. Go to your GitHub repo → Settings → Secrets and variables → Actions → New    repository secret:
+   * AWS_ACCESS_KEY_ID
+   * AWS_SECRET_ACCESS_KEY
+   Make sure these have permissions to complete all cloudformation tasks, including, file upload to s3.
+4. Checkin your changes 
+5. The complete environment will be built for you (other than bedrock guardrails)
+6. Note the API gateway url for /persona resource
+7. Update MyPersonaGen/src/config.js with the url
+8. Checkin again and access from the SPA S3 url or locally using the instructions to run it locally
+
+
+ **Donot update the LLM_MODEL_ID. The Lambda code written from the Amazon Titan API input format**
+
+---
+
 # Architecture Diagram
 
 ![Architecture Diagram](assets/overallArchitecture.svg)
 
-## Run Instructions
-
-The complete environment has been built as an end to end CICD Pipeline
 
 # `Front End Web UI` 
 
