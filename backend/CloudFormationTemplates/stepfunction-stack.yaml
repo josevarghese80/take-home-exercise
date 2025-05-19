@@ -2,19 +2,65 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Production-ready Step Function for persona orchestration with guardrails, retries, and logging
 
 Parameters:
-  GuardrailLambdaArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/lambda/GuardrailArn
 
-  LLMLambdaArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/lambda/LLMLambdaArn
+  # GuardrailLambdaRoleArn:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/iam/GuardrailLambdaRoleArn
 
-  StepFunctionExecutionRoleArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/iam/StepFunctionExecutionRoleArn
+  # LLMLambdaRoleArn:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/iam/LLMLambdaRoleArn
+    
+  S3Bucket:
+      Type: String
+      Description: S3 bucket name where Lambda zips are stored
+  S3Prefix:
+    Type: String
+    Description: S3 prefix/folder path where Lambda zips are stored (no trailing slash)
 
+  # StepFunctionExecutionRoleArn:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/iam/StepFunctionExecutionRoleArn
+  # GuardrailId:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/bedrock/GuardrailId  
+  # GuardrailVersion:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/bedrock/GuardrailVersion
+  # LLMModelId:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/bedrock/LLMModelId
 Resources:
+  GuardrailLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: persona-guardrail-lambda
+      Handler: GuardrailLambda.handler
+      Role: !Sub '{{resolve:ssm:/persona/iam/GuardrailLambdaRoleArn}}'
+      Runtime: nodejs18.x
+      Timeout: 10
+      Environment:
+        Variables:
+          GUARDRAIL_ID: !Sub '{{resolve:ssm:/persona/bedrock/GuardrailId}}'
+          GUARDRAIL_VERSION: !Sub '{{resolve:ssm:/persona/bedrock/GuardrailVersion}}'
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Sub "${S3Prefix}/GuardrailLambda.zip"
+
+  LLMLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: persona-llm-lambda
+      Handler: LLMLambda.handler
+      Role: !Sub '{{resolve:ssm:/persona/iam/LLMLambdaRoleArn}}'
+      Runtime: nodejs18.x
+      Timeout: 10
+      Environment:
+        Variables:
+          LLM_MODEL_ID: !Sub '{{resolve:ssm:/persona/bedrock/LLMModelId}}'
+      Code:
+        S3Bucket: !Ref S3Bucket
+        S3Key: !Sub "${S3Prefix}/LLMLambda.zip"
   PersonaStepFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -25,7 +71,7 @@ Resources:
     Type: AWS::StepFunctions::StateMachine
     Properties:
       # StateMachineName: PersonaOrchestration1
-      RoleArn: !Ref StepFunctionExecutionRoleArn
+      RoleArn: !Sub '{{resolve:ssm:/persona/iam/StepFunctionExecutionRoleArn}}'
       StateMachineType: EXPRESS #For synchronous call
       LoggingConfiguration:
         Destinations:
@@ -41,7 +87,7 @@ Resources:
             "States": {
               "GuardrailCheck": {
                 "Type": "Task",
-                "Resource": "${GuardrailLambdaArn}",
+                "Resource": "${GuardrailLambda.Arn}",
                 "TimeoutSeconds": 10,
                 "Retry": [
                   {
@@ -67,7 +113,7 @@ Resources:
               },
               "CallClaude": {
                 "Type": "Task",
-                "Resource": "${LLMLambdaArn}",
+                "Resource": "${LLMLambda.Arn}",
                 "TimeoutSeconds": 20,
                 "Retry": [
                   {
@@ -100,3 +146,17 @@ Resources:
       Name: /persona/stepfunction/PersonaOrchestrationArn
       Type: String
       Value: !Ref PersonaOrchestrationStepFunction
+
+  GuardrailLambdaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/lambda/GuardrailArn
+      Type: String
+      Value: !GetAtt GuardrailLambda.Arn
+
+  LLMLambdaParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /persona/lambda/LLMLambdaArn
+      Type: String
+      Value: !GetAtt LLMLambda.Arn

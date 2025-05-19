@@ -222,8 +222,8 @@ The back end is fully configured in an AWS environment. And uses Bedrock LLM. Sp
 1. iam-stack.yaml
 2. ssm-bedrock-config.yaml
 3. persona-dynamodb-stack.yaml
-3. lambda-stack.yaml
-4. stepfunction-stack.yaml
+3. stepfunction-stack.yaml
+4. lambda-stack.yaml
 5. lex-bot-stack.yaml
 6. api-gateway-stack.yaml
 

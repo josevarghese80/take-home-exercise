@@ -64,3 +64,59 @@ jobs:
             zip "${name}.zip" "$file"
             aws s3 cp "${name}.zip" s3://${{ steps.load_props.outputs.lambda_bucket }}/${{ steps.load_props.outputs.lambdafolder }}/
           done
+            - name: Deploy CloudFormation Stacks
+        run: |
+          echo "Deploying CloudFormation stacks..."
+          cd backend/CloudFormationTemplates
+
+          # Common CFN flags
+          COMMON_FLAGS="--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --region ${{ steps.load_props.outputs.region }}"
+
+          # Load parameters from file
+          source ../../../${{ env.DEPLOYMENT_PROPS }}
+
+          echo "Deploying: iam-stack.yaml"
+          aws cloudformation deploy --stack-name iam-stack --template-file iam-stack.yaml $COMMON_FLAGS
+
+          echo "Deploying: ssm-bedrock-config.yaml"
+          aws cloudformation deploy \
+            --stack-name ssm-bedrock-config \
+            --template-file ssm-bedrock-config.yaml \
+            --parameter-overrides \
+              GuardrailId=$GUARDRAIL_ID \
+              GuardrailVersion=$GUARDRAIL_VERSION \
+              LLMModelId=$LLM_MODEL_ID \
+            $COMMON_FLAGS
+
+          echo "Deploying: persona-dynamodb-stack.yaml"
+          aws cloudformation deploy --stack-name persona-dynamodb-stack --template-file persona-dynamodb-stack.yaml $COMMON_FLAGS
+
+          echo "Deploying: stepfunction-stack.yaml"
+          aws cloudformation deploy \
+            --stack-name stepfunction-stack \
+            --template-file stepfunction-stack.yaml \
+            --parameter-overrides \
+              S3Bucket=$LAMBDA_S3_BUCKET \
+              S3Prefix=$LAMBDA_FOLDER \
+            $COMMON_FLAGS
+
+          echo "Deploying: lambda-stack.yaml"
+          aws cloudformation deploy \
+            --stack-name lambda-stack \
+            --template-file lambda-stack.yaml \
+            --parameter-overrides \
+              S3Bucket=$LAMBDA_S3_BUCKET \
+              S3Prefix=$LAMBDA_FOLDER \
+            $COMMON_FLAGS
+
+          echo "📄 Deploying: lex-bot-stack.yaml"
+          aws cloudformation deploy --stack-name lex-bot-stack --template-file lex-bot-stack.yaml $COMMON_FLAGS
+
+          echo "📄 Deploying: api-gateway-stack.yaml"
+          aws cloudformation deploy \
+            --stack-name api-gateway-stack \
+            --template-file api-gateway-stack.yaml \
+            --parameter-overrides \
+              S3Bucket=$LAMBDA_S3_BUCKET \
+              S3Prefix=$LAMBDA_FOLDER \
+            $COMMON_FLAGS

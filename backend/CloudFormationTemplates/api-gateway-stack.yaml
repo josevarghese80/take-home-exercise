@@ -3,27 +3,27 @@ Description: Production-ready API Gateway for hybrid persona chatbot — CORS en
 
 Parameters:
   
-  SessionEndLambdaArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/lambda/SessionEndArn
+  # SessionEndLambdaArn:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/lambda/SessionEndArn
 
-  PersonaOrchestrationArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Description: StepFunction ARN
-    Default: /persona/stepfunction/PersonaOrchestrationArn
-  TableName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Description: DynamoDB table to store session and chat history
-    Default: /persona/db/PersonaSessionTableName 
-  LexBotID:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/lex/LexBotID
-  ChatHandlerLambdaRoleArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/iam/ChatHandlerLambdaRoleArn
-  LexBotAlias:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /persona/lex/LexBotAlias
+  # PersonaOrchestrationArn:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Description: StepFunction ARN
+  #   Default: /persona/stepfunction/PersonaOrchestrationArn
+  # TableName:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Description: DynamoDB table to store session and chat history
+  #   Default: /persona/db/PersonaSessionTableName 
+  # LexBotID:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/lex/LexBotID
+  # ChatHandlerLambdaRoleArn:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/iam/ChatHandlerLambdaRoleArn
+  # LexBotAlias:
+  #   Type: AWS::SSM::Parameter::Value<String>
+  #   Default: /persona/lex/LexBotAlias
   S3Bucket:
       Type: String
       Description: S3 bucket name where Lambda zips are stored
@@ -36,15 +36,15 @@ Resources:
     Properties:
       FunctionName: persona-chat-handler-lambda
       Handler: ChatHandlerLambda.handler
-      Role: !Ref ChatHandlerLambdaRoleArn
+      Role: !Sub '{{resolve:ssm:/persona/iam/ChatHandlerLambdaRoleArn}}'
       Runtime: nodejs18.x
       Timeout: 10
       Environment:
         Variables:
-          PERSONA_STEPFUNCTION_ARN: !Ref PersonaOrchestrationArn
-          TABLENAME: !Ref TableName
-          LEXBOT_ID: !Ref LexBotID
-          LEXBOT_ALIAS_ID: !Ref LexBotAlias
+          PERSONA_STEPFUNCTION_ARN: !Sub '{{resolve:ssm:/persona/stepfunction/PersonaOrchestrationArn}}'
+          TABLENAME: !Sub '{{resolve:ssm:/persona/db/PersonaSessionTableName}}'
+          LEXBOT_ID: !Sub '{{resolve:ssm:/persona/lex/LexBotID}}'
+          LEXBOT_ALIAS_ID: !Sub '{{resolve:ssm:/persona/lex/LexBotAlias}}'
       Code:
         S3Bucket: !Ref S3Bucket
         S3Key: !Sub "${S3Prefix}/ChatHandlerLambda.zip"
@@ -104,7 +104,7 @@ Resources:
       Integration:
         IntegrationHttpMethod: POST
         Type: AWS_PROXY
-        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SessionEndLambdaArn}/invocations
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/{{resolve:ssm:/persona/lambda/SessionEndArn}}/invocations
       MethodResponses:
         - StatusCode: 200
           ResponseParameters:
@@ -185,7 +185,7 @@ Resources:
   SessionEndInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref SessionEndLambdaArn
+      FunctionName: !Sub '{{resolve:ssm:/persona/lambda/SessionEndArn}}'
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PersonaApi}/*/POST/end
