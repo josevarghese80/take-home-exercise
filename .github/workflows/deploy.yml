@@ -65,6 +65,8 @@ jobs:
             aws s3 cp "${name}.zip" s3://${{ steps.load_props.outputs.lambda_bucket }}/${{ steps.load_props.outputs.lambdafolder }}/
           done
             - name: Deploy CloudFormation Stacks
+
+      - name: Deploy CloudFormation Stacks
         run: |
           echo "Deploying CloudFormation stacks..."
           cd backend/CloudFormationTemplates
