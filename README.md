@@ -68,7 +68,7 @@ Generate a customer persona containing:
 ---
 ## Project Run Instructions
 
-The complete environment (Front and backend) has been built as an end to end CICD Pipeline
+The complete environment (Front and backend) has been built as an end to end CICD Pipeline u=using GitHub Workflows
 
 You have two options to run the application
 
