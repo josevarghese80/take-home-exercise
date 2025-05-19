@@ -219,13 +219,6 @@ This app calls Lex using the following synchronous pattern:
 SPA → API Gateway → Lambda → Lex V2 -> Lambda (Bedrock Guardrails - Toxicity Check) -> bedrock AI
 ```
 
-## Mock Mode
-
-To test without connecting to AWS:
-
-* Enable mock logic in `ChatComponent.jsx` by simulating responses locally.
-* Useful for UI development without backend setup.
-
 ---
 
 
@@ -283,17 +276,6 @@ The back end is fully configured in an AWS environment. And uses Bedrock LLM. Sp
 | Stack Independence           | Deploy/redeploy in any order                             | Strict deployment order (parent → child)        |
 
 
-
-
-## Post Cloudformation deployment action (If the webapp was deployed first)
-This will be moved to a CICD process in the future. 
-
-1. Access the REST API created by the api-gateway stack
-2. go to Stages -> expand on the plus sign next to dev all the way down to persona/post
-3. copy the Invoke URL
-4. Access the code for MyPersonaGen web app
-5. go to src -> config.js -> API_URL -> Replace the URL with your new URL
-6. Relaod the app
 
 ---
 
