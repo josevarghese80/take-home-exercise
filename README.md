@@ -70,6 +70,10 @@ Generate a customer persona containing:
 
 ![Architecture Diagram](assets/overallArchitecture.svg)
 
+## Run Instructions
+
+The complete environment has been built as an end to end CICD Pipeline
+
 # `Front End Web UI` 
 
 ## Web URL

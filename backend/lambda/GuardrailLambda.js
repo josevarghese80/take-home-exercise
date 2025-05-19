@@ -9,8 +9,8 @@ const bedrock = new BedrockRuntimeClient({ region });
 exports.handler = async (event) => {
   const body = typeof event.body === "string" ? JSON.parse(event.body) : event;
   const { companyName, characteristics, userInput } = body;
-
-  const checkText = userInput || `${companyName} ${characteristics}`;
+  const checkText = {};
+  checkText.text = userInput || `${companyName} ${characteristics}`;
   console.log(`checkText is ${checkText}`)
   const input = {
     guardrailIdentifier: guardrailId,
@@ -18,12 +18,11 @@ exports.handler = async (event) => {
     source: "INPUT",
     content: [
       {
-        text: { // GuardrailTextBlock
-          text: checkText, // required
-        }
+        text: checkText
       }
     ]
   }
+  console.log(`guard rail input is ${JSON.stringify(input,null,2)}`)
   const result = await bedrock.send(new ApplyGuardrailCommand(input));
   console.log(`guard rail response ${JSON.stringify(result, null, 2)}`)
   if (result.blocked) {
