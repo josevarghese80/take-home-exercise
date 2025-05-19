@@ -1,4 +1,4 @@
-name: Deploy React App to S3
+name: Deploy React App and Infrastructure
 
 on:
   push:
@@ -42,6 +42,13 @@ jobs:
           echo "region=$REGION" >> $GITHUB_OUTPUT
           echo "builddir=$BUILD_DIR" >> $GITHUB_OUTPUT
 
+      - name: Export Deployment Parameters to Environment
+        run: |
+          while IFS='=' read -r key value
+          do
+            echo "$key=$value" >> $GITHUB_ENV
+          done < $DEPLOYMENT_PROPS
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -53,7 +60,7 @@ jobs:
         run: |
           echo "Deploying React app to s3://${{ steps.load_props.outputs.react_bucket }}/"
           aws s3 sync ${{ env.REACT_APP_DIR }}/${{ steps.load_props.outputs.builddir }} s3://${{ steps.load_props.outputs.react_bucket }}/ --delete
-      
+
       - name: Package and Upload Lambda Functions
         run: |
           echo "Zipping and uploading Lambda functions..."
@@ -70,11 +77,7 @@ jobs:
           echo "Deploying CloudFormation stacks..."
           cd backend/CloudFormationTemplates
 
-          # Common CFN flags
           COMMON_FLAGS="--capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM --region ${{ steps.load_props.outputs.region }}"
-
-          # Load parameters from file
-          source ../../../${{ env.DEPLOYMENT_PROPS }}
 
           echo "Deploying: iam-stack.yaml"
           aws cloudformation deploy --stack-name iam-stack --template-file iam-stack.yaml $COMMON_FLAGS
@@ -110,10 +113,10 @@ jobs:
               S3Prefix=$LAMBDA_FOLDER \
             $COMMON_FLAGS
 
-          echo "📄 Deploying: lex-bot-stack.yaml"
+          echo "Deploying: lex-bot-stack.yaml"
           aws cloudformation deploy --stack-name lex-bot-stack --template-file lex-bot-stack.yaml $COMMON_FLAGS
 
-          echo "📄 Deploying: api-gateway-stack.yaml"
+          echo "Deploying: api-gateway-stack.yaml"
           aws cloudformation deploy \
             --stack-name api-gateway-stack \
             --template-file api-gateway-stack.yaml \
