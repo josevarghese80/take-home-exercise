@@ -68,7 +68,7 @@ Generate a customer persona containing:
 ---
 ## Project Run Instructions
 
-The complete environment (Front and backend) has been built as an end to end CICD Pipeline u=using GitHub Workflows
+The complete environment (Front and backend) has been built as an end to end CICD Pipeline using GitHub Workflows
 
 You have two options to run the application
 
@@ -101,7 +101,7 @@ You have two options to run the application
 8. Checkin again and access from the SPA S3 url or locally using the instructions to run it locally
 
 
- **Donot update the LLM_MODEL_ID. The Lambda code written from the Amazon Titan API input format**
+ **Donot update the LLM_MODEL_ID. The Lambda code was specifically written for the Amazon Titan API**
 
 ---
 
