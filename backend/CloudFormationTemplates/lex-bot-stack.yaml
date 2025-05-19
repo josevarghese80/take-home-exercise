@@ -81,7 +81,7 @@ Resources:
                       MessageGroupsList:
                         - Message:
                             PlainTextMessage:
-                              Value: "What are the company charestericts"
+                              Value: "What are the company characteristics"
                       MaxRetries: 3
                       AllowInterrupt: false
             - Name: "FallbackIntent"
