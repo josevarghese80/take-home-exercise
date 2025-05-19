@@ -44,10 +44,19 @@ jobs:
 
       - name: Export Deployment Parameters to Environment
         run: |
-          while IFS='=' read -r key value
+          grep -v '^#' $DEPLOYMENT_PROPS | grep '=' | while IFS='=' read -r key value
           do
-            echo "$key=$value" >> $GITHUB_ENV
-          done < $DEPLOYMENT_PROPS
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+            echo "$key=$value" >> "$GITHUB_ENV"
+          done
+
+      # - name: Export Deployment Parameters to Environment
+      #   run: |
+      #     while IFS='=' read -r key value
+      #     do
+      #       echo "$key=$value" >> $GITHUB_ENV
+      #     done < $DEPLOYMENT_PROPS
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
