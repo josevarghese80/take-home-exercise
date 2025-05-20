@@ -22,6 +22,7 @@ export default function ChatComponent() {
         return "Tell me more about your company.";
     };
 
+    //Handle send to and recieving responses from API
     const handleSend = async () => {
         if (!input.trim()) return;
 
@@ -37,7 +38,7 @@ export default function ChatComponent() {
 
         const newCount = userQuestionCount + 1;
         setUserQuestionCount(newCount);
-        // console.log(`API URL ${API_URL}`)
+        // Afet 5 questions from user display this message
         if (newCount >= 5) {
             // Stop after 4 user questions
             const finalMessage = {
@@ -57,6 +58,8 @@ Visit https://cadime.ai/ to learn more.`,
             return;
         }
         try {
+
+            //AWS API Call
             const response = await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -85,7 +88,7 @@ Visit https://cadime.ai/ to learn more.`,
             setLoading(false);
         }
     };
-    // 👇 1. Run once to show welcome message
+    // Show welcome message when page is rendered for the first time
     useEffect(() => {
         setMessages([
             {
@@ -95,6 +98,8 @@ Visit https://cadime.ai/ to learn more.`,
             },
         ]);
     }, []);
+
+     // Automatically scroll to bottom when new messages arrive
     useEffect(() => {
         chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
     }, [messages, loading]);

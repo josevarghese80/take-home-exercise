@@ -2,8 +2,27 @@ import React from "react";
 import { BsPerson } from "react-icons/bs"; // Bootstrap icons
 import { HiOutlineUserCircle } from 'react-icons/hi';
 
+/*** MessageBubble displays a single chat message */
+
 export default function MessageBubble({ text, sender, timestamp }) {
   const isUser = sender === "user";
+
+
+  /***
+    Detect URLs in message text and format them as clickable links.
+    This uses a regular expression to identify URLs and wraps them in <a> tags.
+    SECURITY NOTE:
+      - The 'target="_blank"' attribute opens the link in a new tab/window,
+        which prevents malicious sites from replacing your app’s page.
+      - The 'rel="noopener noreferrer"' attribute is crucial:
+      - 'noopener' prevents the new tab from accessing the `window.opener` property,
+        which protects your app from potential phishing or tabnabbing attacks.
+      - 'noreferrer' also removes the Referer header, which hides the origin URL
+        from the linked site (can be helpful for privacy).
+    Combined, these settings help prevent vulnerabilities such as reverse tabnabbing,
+    where a malicious site opened via link can hijack the original tab's location.
+  */
+
 
   const formatMessageText = (text) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
